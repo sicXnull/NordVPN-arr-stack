@@ -1,0 +1,149 @@
+version: "3.5"
+
+services:
+  vpn:
+    container_name: NordVPN
+    image: bubuntux/nordvpn:latest
+    restart: unless-stopped
+    hostname: nordvpn
+    env_file: .env
+    cap_add:
+      - NET_ADMIN    # Required
+    devices:
+      - /dev/net/tun
+    environment:                # Review https://github.com/bubuntux/nordvpn#environment-variables
+      - USER=${VPN_USER}
+      - PASS=${VPN_PASSWORD}
+      - CONNECT=${VPN_COUNTRY}
+      - TECHNOLOGY=NordLynx
+      - NETWORK=${NETWORK}
+    ports:
+      - ${VPN_PORT}:6881
+      - ${VPN_PORT}:6881/udp
+      - ${QBITTORRENT_PORT}:${QBITTORRENT_PORT}
+      - ${JACKETT_PORT}:9117
+      - ${RADARR_PORT}:7878
+      - ${SONARR_PORT}:8989
+      - ${LIDARR_PORT}:8686
+      - ${BAZARR_PORT}:6767
+    networks:
+      NordVPN:
+        ipv4_address: 10.6.0.5
+        aliases:
+          - nordvpn
+
+  qbittorrent:
+    container_name: qBittorrent
+    image: linuxserver/qbittorrent:latest
+    restart: unless-stopped
+    env_file: .env
+    network_mode: service:vpn
+    environment:
+      - WEBUI_PORT=${QBITTORRENT_PORT}
+      - PUID=${PUID} # default user id, defined in .env
+      - PGID=${PGID} # default group id, defined in .env
+    volumes:
+      - ${ROOT}/qbittorrent:/config
+      - ${DOWNLOAD_ROOT}:/downloads
+    depends_on:
+      - vpn
+
+  jackett:
+    container_name: Jackett
+    image: linuxserver/jackett:latest
+    restart: unless-stopped
+    env_file: .env
+    network_mode: service:vpn # Run on the VPN Network
+    environment:
+      - PUID=${PUID} # default user id, defined in .env
+      - PGID=${PGID} # default group id, defined in .env
+      - TZ=${TZ} # timezone, defined in .env
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - ${DOWNLOAD_ROOT}/torrent-blackhole:/downloads # place where to put .torrent files for manual download
+      - ${ROOT}/jackett/:/config # config files
+    depends_on:
+      - vpn
+
+  sonarr:
+    container_name: Sonarr
+    image: linuxserver/sonarr:latest
+    restart: unless-stopped
+    env_file: .env
+    network_mode: service:vpn # Run on the VPN Network
+    environment:
+      - PUID=${PUID} # default user id, defined in .env
+      - PGID=${PGID} # default group id, defined in .env
+      - TZ=${TZ} # timezone, defined in .env
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - ${ROOT}/sonarr/:/config # config files
+      - ${MEDIA_ROOT}/TV:/tv # tv shows folder
+      - ${DOWNLOAD_ROOT}/:/downloads # download folder
+    depends_on:
+      - vpn
+      - qbittorrent
+      - jackett
+
+  radarr:
+    container_name: Radarr
+    image: linuxserver/radarr:latest
+    restart: unless-stopped
+    env_file: .env
+    network_mode: service:vpn # Run on the VPN Network
+    environment:
+      - PUID=${PUID} # default user id, defined in .env
+      - PGID=${PGID} # default group id, defined in .env
+      - TZ=${TZ} # timezone, defined in .env
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - ${ROOT}/radarr/:/config # config files
+      - ${MEDIA_ROOT}/Movies:/movies # movies folder
+      - ${DOWNLOAD_ROOT}/:/downloads # download folder
+    depends_on:
+      - vpn
+      - qbittorrent
+      - jackett
+
+  lidarr:
+    container_name: Lidarr
+    image: linuxserver/lidarr:latest
+    restart: unless-stopped
+    env_file: .env
+    network_mode: service:vpn # Run on the VPN Network
+    environment:
+      - PUID=${PUID} # default user id, defined in .env
+      - PGID=${PGID} # default group id, defined in .env
+      - TZ=${TZ} # timezone, defined in .env
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - ${ROOT}/lidarr/:/config # config files
+      - ${MEDIA_ROOT}/Music:/music # movies folder
+      - ${DOWNLOAD_ROOT}/:/downloads # download folder
+    depends_on:
+      - vpn
+      - qbittorrent
+      - jackett
+
+  bazarr:
+    container_name: Bazarr
+    image: linuxserver/bazarr:latest
+    restart: unless-stopped
+    env_file: .env
+    network_mode: service:vpn # Run on the VPN Network
+    environment:
+      - PUID=${PUID} # default user id, defined in .env
+      - PGID=${PGID} # default group id, defined in .env
+      - TZ=${TZ} # timezone, defined in .env
+    volumes:
+      - ${ROOT}/bazarr/:/config # config files
+      - ${MEDIA_ROOT}/movies:/movies # movies folder, same as Radarr
+      - ${MEDIA_ROOT}/tv:/tv # tv shows folder, same as Sonarr
+    depends_on:
+      - vpn
+
+networks:
+  NordVPN:
+    ipam:
+      config:
+        - subnet: 10.6.0.0/16
