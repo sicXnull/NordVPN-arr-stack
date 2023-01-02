@@ -137,8 +137,8 @@ services:
       - TZ=${TZ} # timezone, defined in .env
     volumes:
       - ${ROOT}/bazarr/:/config # config files
-      - ${MEDIA_ROOT}/movies:/movies # movies folder, same as Radarr
-      - ${MEDIA_ROOT}/tv:/tv # tv shows folder, same as Sonarr
+      - ${MEDIA_ROOT}/Movies:/movies # movies folder, same as Radarr
+      - ${MEDIA_ROOT}/TV:/tv # tv shows folder, same as Sonarr
     depends_on:
       - vpn
 
