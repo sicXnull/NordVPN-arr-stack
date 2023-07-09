@@ -40,14 +40,14 @@ services:
     image: linuxserver/qbittorrent:latest
     restart: unless-stopped
     env_file: .env
-    network_mode: service:vpn
+    network_mode: service:vpn # Run on the VPN Network
     environment:
       - WEBUI_PORT=${QBITTORRENT_PORT}
       - PUID=${PUID} # default user id, defined in .env
       - PGID=${PGID} # default group id, defined in .env
     volumes:
-      - ${ROOT}/qbittorrent:/config
-      - ${DOWNLOAD_ROOT}:/downloads
+      - ${ROOT}/qbittorrent:/config # config files
+      - ${DOWNLOAD_ROOT}:/downloads # download folder
     depends_on:
       - vpn
 
@@ -116,7 +116,7 @@ services:
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - ${ROOT}/lidarr/config/:/config # config files
-      - ${MEDIA_ROOT}/Music:/music # movies folder
+      - ${MEDIA_ROOT}/Music:/music # music folder
       - ${DOWNLOAD_ROOT}/:/downloads # download folder
     depends_on:
       - vpn
@@ -150,7 +150,7 @@ services:
       - PGID=${PGID} # default group id, defined in .env
       - TZ=${TZ} # timezone, defined in .env
     volumes:
-      - ${ROOT}/xteve:/home/xteve/conf
+      - ${ROOT}/xteve:/home/xteve/conf  # config files
       - ${ROOT}/xteve/temp:/tmp/xteve
       - ${ROOT}/xteve/log:/var/log
     depends_on:
@@ -181,7 +181,7 @@ services:
       - PGID=${PGID} # default group id, defined in .env
       - TZ=${TZ} # timezone, defined in .env
     volumes:
-      - ${ROOT}/nzbget:/config
+      - ${ROOT}/nzbget:/config  # config files
       - ${DOWNLOAD_ROOT}:/downloads #optional
     depends_on:
       - vpn
