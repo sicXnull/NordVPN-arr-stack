@@ -1,6 +1,6 @@
 # NordVPN-arr-stack
 
-Radarr/Sonarr/Lidarr/Bazarr/Jackett/Qbittorent through NordVPN
+Radarr/Sonarr/Lidarr/Bazarr/Prowlarr/Qbittorent/NZBGet/Xteve through NordVPN
 
 ## Setup
 
