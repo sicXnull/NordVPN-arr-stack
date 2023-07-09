@@ -21,11 +21,14 @@ services:
       - ${VPN_PORT}:6881
       - ${VPN_PORT}:6881/udp
       - ${QBITTORRENT_PORT}:${QBITTORRENT_PORT}
-      - ${JACKETT_PORT}:9117
       - ${RADARR_PORT}:7878
       - ${SONARR_PORT}:8989
       - ${LIDARR_PORT}:8686
       - ${BAZARR_PORT}:6767
+      - ${XTEVE_PORT}:34400
+      - ${PROWLARR_PORT}:9696
+      - ${FLARESOLVERR_PORT}:8191
+      - ${NZBGET_PORT}:6789
     networks:
       NordVPN:
         ipv4_address: 10.6.0.5
@@ -48,20 +51,17 @@ services:
     depends_on:
       - vpn
 
-  jackett:
-    container_name: Jackett
-    image: linuxserver/jackett:latest
+  prowlarr:
+    container_name: Prowlarr
+    image: lscr.io/linuxserver/prowlarr:latest
     restart: unless-stopped
-    env_file: .env
     network_mode: service:vpn # Run on the VPN Network
     environment:
       - PUID=${PUID} # default user id, defined in .env
       - PGID=${PGID} # default group id, defined in .env
       - TZ=${TZ} # timezone, defined in .env
     volumes:
-      - /etc/localtime:/etc/localtime:ro
-      - ${DOWNLOAD_ROOT}/torrent-blackhole:/downloads # place where to put .torrent files for manual download
-      - ${ROOT}/jackett/:/config # config files
+      - ${ROOT}/prowlarr/config:/config # config files
     depends_on:
       - vpn
 
@@ -77,13 +77,12 @@ services:
       - TZ=${TZ} # timezone, defined in .env
     volumes:
       - /etc/localtime:/etc/localtime:ro
-      - ${ROOT}/sonarr/:/config # config files
+      - ${ROOT}/sonarr/config/:/config # config files
       - ${MEDIA_ROOT}/TV:/tv # tv shows folder
       - ${DOWNLOAD_ROOT}/:/downloads # download folder
     depends_on:
       - vpn
-      - qbittorrent
-      - jackett
+      - prowlarr
 
   radarr:
     container_name: Radarr
@@ -97,13 +96,12 @@ services:
       - TZ=${TZ} # timezone, defined in .env
     volumes:
       - /etc/localtime:/etc/localtime:ro
-      - ${ROOT}/radarr/:/config # config files
+      - ${ROOT}/radarr/config/:/config # config files
       - ${MEDIA_ROOT}/Movies:/movies # movies folder
       - ${DOWNLOAD_ROOT}/:/downloads # download folder
     depends_on:
       - vpn
-      - qbittorrent
-      - jackett
+      - prowlarr
 
   lidarr:
     container_name: Lidarr
@@ -117,13 +115,12 @@ services:
       - TZ=${TZ} # timezone, defined in .env
     volumes:
       - /etc/localtime:/etc/localtime:ro
-      - ${ROOT}/lidarr/:/config # config files
+      - ${ROOT}/lidarr/config/:/config # config files
       - ${MEDIA_ROOT}/Music:/music # movies folder
       - ${DOWNLOAD_ROOT}/:/downloads # download folder
     depends_on:
       - vpn
-      - qbittorrent
-      - jackett
+      - prowlarr
 
   bazarr:
     container_name: Bazarr
@@ -136,9 +133,56 @@ services:
       - PGID=${PGID} # default group id, defined in .env
       - TZ=${TZ} # timezone, defined in .env
     volumes:
-      - ${ROOT}/bazarr/:/config # config files
+      - ${ROOT}/bazarr/config/:/config # config files
       - ${MEDIA_ROOT}/Movies:/movies # movies folder, same as Radarr
       - ${MEDIA_ROOT}/TV:/tv # tv shows folder, same as Sonarr
+    depends_on:
+      - vpn
+      
+  xteve:
+    container_name: xTeVe
+    image: 'dnsforge/xteve'
+    restart: unless-stopped
+    env_file: .env
+    network_mode: service:vpn # Run on the VPN Network
+    environment:
+      - PUID=${PUID} # default user id, defined in .env
+      - PGID=${PGID} # default group id, defined in .env
+      - TZ=${TZ} # timezone, defined in .env
+    volumes:
+      - ${ROOT}/xteve:/home/xteve/conf
+      - ${ROOT}/xteve/temp:/tmp/xteve
+      - ${ROOT}/xteve/log:/var/log
+    depends_on:
+      - vpn
+      
+  flaresolverr:
+    container_name: FlareSolverr
+    image: ghcr.io/flaresolverr/flaresolverr:latest
+    restart: unless-stopped
+    env_file: .env
+    network_mode: service:vpn # Run on the VPN Network
+    environment:
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+      - LOG_HTML=${LOG_HTML:-false}
+      - CAPTCHA_SOLVER=${CAPTCHA_SOLVER:-none}
+      - TZ=${TZ} # timezone, defined in .env
+    depends_on:
+      - vpn
+      
+  nzbget:
+    container_name: NZBget
+    image: lscr.io/linuxserver/nzbget:latest
+    restart: unless-stopped
+    env_file: .env
+    network_mode: service:vpn # Run on the VPN Network
+    environment:
+      - PUID=${PUID} # default user id, defined in .env
+      - PGID=${PGID} # default group id, defined in .env
+      - TZ=${TZ} # timezone, defined in .env
+    volumes:
+      - ${ROOT}/nzbget:/config
+      - ${DOWNLOAD_ROOT}:/downloads #optional
     depends_on:
       - vpn
 
