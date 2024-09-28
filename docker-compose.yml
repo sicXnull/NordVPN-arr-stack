@@ -3,7 +3,7 @@ version: "3.5"
 services:
   vpn:
     container_name: NordVPN
-    image: bubuntux/nordvpn:latest
+    image: ghcr.io/bubuntux/nordlynx
     restart: unless-stopped
     hostname: nordvpn
     env_file: .env
@@ -11,15 +11,13 @@ services:
       - NET_ADMIN    # Required
     devices:
       - /dev/net/tun
-    environment:                # Review https://github.com/bubuntux/nordvpn#environment-variables
-      - USER=${VPN_USER}
-      - PASS=${VPN_PASSWORD}
-      - CONNECT=${VPN_COUNTRY}
-      - TECHNOLOGY=NordLynx
-      - NETWORK=${NETWORK}
+    environment:                # Review https://github.com/bubuntux/nordlynx
+      - PRIVATE_KEY=${PRIVATE_KEY}
+      - DNS=103.86.96.100,103.86.96.100
+      - COUNTRY_CODE=${VPN_COUNTRY}
+      - TZ=${TZ}
+      - NET_LOCAL=${NETWORK}
     ports:
-      - ${VPN_PORT}:6881
-      - ${VPN_PORT}:6881/udp
       - ${QBITTORRENT_PORT}:${QBITTORRENT_PORT}
       - ${RADARR_PORT}:7878
       - ${SONARR_PORT}:8989
